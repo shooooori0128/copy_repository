@@ -1,0 +1,41 @@
+# Refer https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions
+name: ci
+
+# Execute workflow on push and pull request to any branch
+on:
+  repository_dispatch:
+    types: [sync-repository]
+
+jobs:
+  ci:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        account_name: ["shooooori0128"]
+        node: [12]
+        os: [ubuntu-latest]
+        base_repository: ["base_repository"]
+        copy_repository: ["copy_repository"]
+
+    steps:
+      - name: Checkout code 🛎
+        uses: actions/checkout@main
+
+      - name: Clone repository
+        uses: actions/checkout@main
+        with:
+          path: ${{ matrix.base_repository }}
+          repository: ${{ matrix.account_name }}/${{ matrix.base_repository }}
+          token: ${{ secrets.SYNC_REPOSITORY }}
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@main
+        with:
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          branch: ${{ matrix.copy_repository }}
+          branch-suffix: timestamp
+          commit-message: "sync ${{ matrix.base_repository }}"
+          delete-branch: true
+          title: "sync repository"
+          token: ${{ secrets.SYNC_REPOSITORY }}
